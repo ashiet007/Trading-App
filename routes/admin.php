@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController as AdminAdminController;
+use App\Http\Controllers\Admin\DealsController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\KycController;
 use App\Http\Controllers\Admin\OrderController;
@@ -37,4 +38,10 @@ Route::group(['middleware' => 'adminauth'], function () {
      * Users routes
      */
     Route::resource('orders', OrderController::class);
+
+    Route::get('bulk-users-upload', [UserController::class, 'showBulkUploadForm'])->name('userBulkUploadForm');
+    Route::post('bulk-users-upload', [UserController::class, 'bulkImport'])->name('bulkUpload');
+
+    Route::get('deals/bulk-trade-upload', [DealsController::class, 'showDealsBulkUploadForm'])->name('tradeBulkUploadForm');
+    Route::post('deals/bulk-trade-upload', [DealsController::class, 'bulkDealsImport'])->name('bulkUploadTrade');
 });

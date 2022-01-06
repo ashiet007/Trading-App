@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\DataTables\UsersDataTable;
 use App\Http\Controllers\Controller;
+use App\Imports\UsersImport;
 use App\Models\User;
 use App\Models\UserPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use JsValidator;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 use Throwable;
 
 class UserController extends Controller
@@ -97,11 +99,16 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'Something went wrong');
         }
     }
-	/* public function planHistory()
+
+    public function showBulkUploadForm()
     {
-         $plan_history = UserPlan::where('id',1)->first();
-		  return view("admin.users.plan", compact('plan_history'));
-		// echo "<pre>";print_r($plan_history->user);die('222');
-		 
-    } */
+        return view("admin.users.bulk-upload");
+    }
+
+    public function bulkImport(Request $request)
+    {
+        $file = $request->file;
+        Excel::import(new UsersImport, $file);
+        return redirect()->back()->with('success', 'File imported successfully');
+    }
 }

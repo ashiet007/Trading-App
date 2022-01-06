@@ -1,19 +1,14 @@
-import React, { useEffect } from "react";
+import React from "react";
 import Background from "./Background";
 import Form from "./Form";
 import { Link, Redirect } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useAuth } from "../context";
 
 function Login() {
-    const userAuth = useSelector((state) => state.auth);
-    const [auth, handleAuth] = useAuth(useAuth);
-    useEffect(() => {
-        if (userAuth.authenticated) {
-            handleAuth(true);
-            return <Redirect to={"/"} />;
-        }
-    }, [userAuth.authenticated]);
+    const isAutenticated = useSelector((state) => state.user.isAuthenticated);
+    if (isAutenticated) {
+        return <Redirect to={"/"} />;
+    }
     return (
         <div className="auth-page">
             <div className="container-fluid p-0">
@@ -28,19 +23,19 @@ function Login() {
                                             className="d-block auth-logo"
                                         >
                                             <img
-                                                src={"images/logo-sm.svg"}
+                                                src={
+                                                    "images/logo_levitas_small.png"
+                                                }
                                                 alt=""
-                                                height="28"
+                                                height="48"
                                             />
-                                            <span className="logo-txt">
-                                                CFD
-                                            </span>
                                         </Link>
                                     </div>
                                     <Form />
                                     <div className="mt-4 mt-md-5 text-center">
                                         <p className="mb-0">
-                                            ©{new Date().getFullYear()} CFD.
+                                            ©{new Date().getFullYear()}{" "}
+                                            Levitas-globalmarkets.
                                         </p>
                                     </div>
                                 </div>

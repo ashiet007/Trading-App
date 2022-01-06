@@ -1,93 +1,36 @@
-import React, { useState, useReducer } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import axios from "axios";
 import { Alert, Spinner } from "react-bootstrap";
 import { useHistory } from "react-router-dom";
-
-const initialState = {
-    isLoading: false,
-    success_message: "",
-    error_message: "",
-    errors: null,
-};
-
-const reducer = (state = initialState, action) => {
-    switch (action.type) {
-        case "REGISTER_REQUEST":
-            return { ...state, isLoading: true };
-        case "REGISTER_SUCCESS":
-            return {
-                ...state,
-                success_message: action.payload.success_message,
-                isLoading: false,
-            };
-        case "REGISTER_ERROR":
-            return {
-                ...state,
-                isLoading: false,
-                error_message: action.payload.error_message,
-                errors: action.payload.errors,
-            };
-        default:
-            throw new Error("Unkown action type");
-    }
-};
+import { useRegisterMutation } from "../../utils/store/services/user";
+import { useAlert } from "react-alert";
 
 const Form = () => {
+    const alert = useAlert();
+    const [userRegister, { isLoading }] = useRegisterMutation();
     const {
         register,
         handleSubmit,
         watch,
         formState: { errors },
     } = useForm();
-    const [show, setShow] = useState(true);
-    const [state, dispatch] = useReducer(reducer, initialState);
     let history = useHistory();
 
-    const onSubmit = (data) => {
-        dispatch({ type: "REGISTER_REQUEST" });
-        axios
-            .post("/api/register", data)
-            .then((res) => {
-                dispatch({
-                    type: "REGISTER_SUCCESS",
-                    payload: {
-                        success_message:
-                            "User registered successfully. Redirecting to Login...",
-                    },
-                });
-                setTimeout(() => {
-                    history.push("/login");
-                }, 2000);
-            })
-            .catch((err) => {
-                dispatch({
-                    type: "REGISTER_ERROR",
-                    payload: {
-                        error_message: err.response.data.message,
-                        errors: err.response.data.errors,
-                    },
-                });
-                setShow(true);
-            });
-    };
-
-    const renderErrors = () => {
-        const errorItems = state.errors
-            ? Object.keys(state.errors).map((key, i) => {
-                  const error = state.errors[key][0];
-                  return (
-                      <li key={key}>
-                          <span style={{ fontWeight: "bold" }}>{key}:</span>
-                          <br />
-                          {error}
-                      </li>
-                  );
-              })
-            : null;
-
-        return <ul>{errorItems}</ul>;
+    const onSubmit = async (formData) => {
+        const { data, error } = await userRegister(formData);
+        if (data) {
+            alert.show(
+                "Registration successful. Redirecting to Login page...",
+                { type: "success" }
+            );
+            setTimeout(() => {
+                history.push("/login");
+            }, 2000);
+        }
+        if (error) {
+            alert.show(error.data.message, { type: "error" });
+        }
     };
 
     const noClick = (e) => {
@@ -101,35 +44,20 @@ const Form = () => {
                         <div className="mb-4 mb-md-5 text-center">
                             <Link to={"/"} className="d-block auth-logo">
                                 <img
-                                    src={"/images/logo-sm.svg"}
+                                    src={"/images/logo_levitas_small.png"}
                                     alt=""
-                                    height="28"
+                                    height="48"
                                 />
-                                <span className="logo-txt">CFD</span>
                             </Link>
                         </div>
                         <div className="auth-content my-auto">
                             <div className="text-center">
                                 <h5 className="mb-0">Register Account</h5>
                                 <p className="text-muted mt-2">
-                                    Get your free CFD account now.
+                                    Get your free Levitas-globalmarkets account
+                                    now.
                                 </p>
                             </div>
-                            {state.error_message && show ? (
-                                <Alert
-                                    variant="danger"
-                                    onClose={() => setShow(false)}
-                                    dismissible
-                                >
-                                    {state.error_message}
-                                    {renderErrors()}
-                                </Alert>
-                            ) : null}
-                            {state.success_message ? (
-                                <Alert variant="success">
-                                    {state.success_message}
-                                </Alert>
-                            ) : null}
                             <form
                                 className="needs-validation mt-4 pt-2"
                                 onSubmit={handleSubmit(onSubmit)}
@@ -228,14 +156,15 @@ const Form = () => {
                                 </div>
                                 <div className="mb-4">
                                     <p className="mb-0">
-                                        By registering you agree to the CFD
+                                        By registering you agree to the
+                                        Levitas-globalmarkets
                                         <a href="#" className="text-primary">
                                             Terms of Use
                                         </a>
                                     </p>
                                 </div>
                                 <div className="mb-3">
-                                    {state.isLoading ? (
+                                    {isLoading ? (
                                         <button
                                             className="btn btn-primary w-100 waves-effect waves-light"
                                             type="submit"
@@ -313,7 +242,8 @@ const Form = () => {
                         </div>
                         <div className="mt-4 mt-md-5 text-center">
                             <p className="mb-0">
-                                ©{new Date().getFullYear()} Demo.
+                                ©{new Date().getFullYear()}{" "}
+                                Levitas-globalmarkets.
                             </p>
                         </div>
                     </div>

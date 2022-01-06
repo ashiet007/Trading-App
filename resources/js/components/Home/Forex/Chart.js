@@ -2,13 +2,14 @@ import React from "react";
 import TradingViewWidget, { Themes } from "react-tradingview-widget";
 import { useSelector } from "react-redux";
 
-const Chart = ({ ticker }) => {
-    const allForex = useSelector((state) => state.allForexes.forexes);
+const Chart = () => {
+    const { forexes, activeForex } = useSelector((state) => state.forex);
     return (
         <div className="card">
             <div className="card-header align-items-center d-flex">
                 <h4 className="card-title mb-0 flex-grow-1">
-                    {allForex[ticker] ? allForex[ticker].name : ""} ({ticker})
+                    {forexes[activeForex] ? forexes[activeForex].name : ""} (
+                    {activeForex})
                 </h4>
 
                 <div className="flex-shrink-0">
@@ -21,7 +22,7 @@ const Chart = ({ ticker }) => {
             </div>
             <div className="card-body">
                 <TradingViewWidget
-                    symbol={ticker}
+                    symbol={activeForex}
                     theme={Themes.LIGHT}
                     locale="in"
                     width={700}

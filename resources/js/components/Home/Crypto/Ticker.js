@@ -1,27 +1,54 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import {
+    updateMarketPairs,
+    updateActiveMarket,
+} from "../../../utils/store/slice/tickerSlice";
+
 import TickerData from "./TickerData";
-import { useDispatch, useSelector } from "react-redux";
 
 const Ticker = (props) => {
-    const dispatch = useDispatch();
     const [search, setSearch] = useState("");
-    const marketPairs = useSelector((state) => state.market_pairs);
+    const { activeMarket, marketPairs } = useSelector((state) => state.ticker);
+    const dispatch = useDispatch();
+    const ws = useRef(null);
+
+    let filteredPairs = marketPairs
+        ? Object.keys(marketPairs).filter((item) => item.endsWith(activeMarket))
+        : [];
+
+    const connectTicker = () => {
+        //connect
+        ws.current = new WebSocket(
+            "wss://stream.binance.com:9443/ws/!ticker@arr"
+        );
+        // on message receive
+        ws.current.onmessage = (e) => {
+            const allTickers = JSON.parse(e.data);
+            let tickers = {};
+            allTickers.forEach((data) => {
+                tickers[data.s] = data;
+            });
+            dispatch(updateMarketPairs(tickers));
+        };
+        //on connection close
+        ws.current.onclose = (e) => {
+            setTimeout(function () {
+                connectTicker();
+            }, 1000);
+        };
+    };
     const handleTabClick = (e) => {
         let market = e.currentTarget
             ? e.currentTarget.getAttribute("data-tab")
             : e;
-        dispatch({
-            type: "SET_ACTIVE_MARKET",
-            data: {
-                filtered_pairs: Object.keys(marketPairs).filter((item) =>
-                    item.endsWith(market)
-                ),
-                market: market,
-            },
-        });
-        const activeCurrency = `BTC${market}`;
-        props.handleUpdateCurrency(activeCurrency);
+        dispatch(updateActiveMarket(market));
     };
+
+    useEffect(() => {
+        connectTicker();
+    }, []);
+
     return (
         <div className="col-xl-3">
             <div className="card">
@@ -34,7 +61,7 @@ const Ticker = (props) => {
                             <li className="nav-item">
                                 <a
                                     className={
-                                        props.market == "GBP"
+                                        activeMarket == "GBP"
                                             ? "nav-link active"
                                             : "nav-link"
                                     }
@@ -50,7 +77,7 @@ const Ticker = (props) => {
                             <li className="nav-item">
                                 <a
                                     className={
-                                        props.market == "USDT"
+                                        activeMarket == "USDT"
                                             ? "nav-link active"
                                             : "nav-link"
                                     }
@@ -88,8 +115,8 @@ const Ticker = (props) => {
                             >
                                 <table className="table align-middle table-nowrap table-borderless">
                                     <tbody>
-                                        {props.tickers
-                                            ? props.tickers.map((ticker) => {
+                                        {filteredPairs
+                                            ? filteredPairs.map((ticker) => {
                                                   const tickerData =
                                                       marketPairs[ticker];
                                                   if (
@@ -110,11 +137,8 @@ const Ticker = (props) => {
                                                                   tickerData.b
                                                               }
                                                               amount="Amount"
-                                                              handleUpdateCurrency={
-                                                                  props.handleUpdateCurrency
-                                                              }
                                                               market={
-                                                                  props.market
+                                                                  activeMarket
                                                               }
                                                           />
                                                       );

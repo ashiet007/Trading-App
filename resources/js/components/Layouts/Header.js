@@ -1,23 +1,28 @@
 import React, { useEffect } from "react";
 import { Button } from "react-bootstrap";
-import { useAuth } from "../context";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "../actions";
+import { useLogoutMutation } from "../../utils/store/services/user";
+import { removeUser } from "../../utils/store/slice/userSlice";
+import { useAlert } from "react-alert";
 
-export const Header = () => {
-    const [auth, handleAuth] = useAuth(useAuth);
+const Header = () => {
     const dispatch = useDispatch();
-    const userAuth = useSelector((state) => state.auth);
-    const handleLogout = (e) => {
+    const alert = useAlert();
+    const { isAuthenticated, user } = useSelector((state) => state.user);
+    const [userLogout] = useLogoutMutation();
+    const handleLogout = async (e) => {
         e.preventDefault();
-        dispatch(logout());
-    };
-    useEffect(() => {
-        if (!userAuth.authenticated) {
-            handleAuth(false);
+        const result = await userLogout();
+        if (result.data) {
+            localStorage.removeItem("user");
+            localStorage.removeItem("token");
+            dispatch(removeUser());
         }
-    }, [userAuth.authenticated]);
+        if (result.error) {
+            alert.show(result.error.data.message, { type: "error" });
+        }
+    };
     return (
         <header id="page-topbar">
             <div className="navbar-header">
@@ -26,32 +31,32 @@ export const Header = () => {
                         <Link to={"/"} className="logo logo-dark">
                             <span className="logo-sm">
                                 <img
-                                    src={"/images/logo-sm.svg"}
+                                    src={"/images/logo_levitas_small.png"}
                                     alt=""
-                                    height="24"
+                                    height="44"
                                 />
                             </span>
                             <span className="logo-lg">
                                 <img
-                                    src={"/images/logo-sm.svg"}
+                                    src={"/images/logo_levitas_small.png"}
                                     alt=""
-                                    height="24"
+                                    height="44"
                                 />
                             </span>
                         </Link>
                         <Link to={"/"} className="logo logo-light">
                             <span className="logo-sm">
                                 <img
-                                    src={"/images/logo-sm.svg"}
+                                    src={"/images/logo_levitas_small.png"}
                                     alt=""
-                                    height="24"
+                                    height="44"
                                 />
                             </span>
                             <span className="logo-lg">
                                 <img
-                                    src={"/images/logo-sm.svg"}
+                                    src={"/images/logo_levitas_small.png"}
                                     alt=""
-                                    height="24"
+                                    height="44"
                                 />
                             </span>
                         </Link>
@@ -116,7 +121,7 @@ export const Header = () => {
                 </div>
                 <div className="d-flex">
                     <div className="dropdown d-inline-block">
-                        {auth ? (
+                        {isAuthenticated ? (
                             <>
                                 <button
                                     type="button"
@@ -132,7 +137,7 @@ export const Header = () => {
                                         alt="Header Avatar"
                                     />
                                     <span className="d-none d-xl-inline-block ms-1 fw-medium">
-                                        {userAuth.user.name}
+                                        {user.name}
                                     </span>
                                     <i className="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
                                 </button>
@@ -170,3 +175,5 @@ export const Header = () => {
         </header>
     );
 };
+
+export default Header;

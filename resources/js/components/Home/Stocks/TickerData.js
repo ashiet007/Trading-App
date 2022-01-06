@@ -1,9 +1,15 @@
 import React from "react";
+import { useDispatch } from "react-redux";
+import { updateActiveStock } from "../../../utils/store/slice/stocksSlice";
 
 const TickerData = (props) => {
+    const dispatch = useDispatch();
+    const handleUpdateTicker = (ticker) => {
+        dispatch(updateActiveStock(ticker));
+    };
     return (
         <tr
-            onClick={() => props.handleUpdateTicker(props.ticker)}
+            onClick={() => handleUpdateTicker(props.ticker)}
             style={{ cursor: "pointer" }}
         >
             <td style={{ width: "50px" }}>

@@ -6,6 +6,7 @@ import Moment from "react-moment";
 import Swal from "sweetalert2";
 import { Spinner } from "react-bootstrap";
 import DateRangePicker from "@wojtekmaj/react-daterange-picker";
+import moment from "moment";
 
 const initState = {
     reports: [],
@@ -39,8 +40,12 @@ const reducer = (state = initState, action) => {
 const Report = () => {
     const [state, dispatch] = useReducer(reducer, initState);
     const [reportDownloadLoading, setReportDownloadLoading] = useState(false);
-    const [dateRange, setDateRange] = useState([new Date(), new Date()]);
-
+    const [reportPNLDownloadLoading, setReportPNLDownloadLoading] =
+        useState(false);
+    const [dateRange, setDateRange] = useState([
+        new Date(moment().add(-1, "y")),
+        new Date(),
+    ]);
     useEffect(() => {
         dispatch({ type: "REPORT_REQUEST" });
         axios
@@ -68,26 +73,39 @@ const Report = () => {
             });
     }, []);
 
-    const downloadReport = (e) => {
+    const downloadReport = (e, reportType) => {
         e.preventDefault();
-        // console.log(dateRange);
-        setReportDownloadLoading(true);
+        if (reportType == "trade") {
+            setReportDownloadLoading(true);
+        } else {
+            setReportPNLDownloadLoading(true);
+        }
+
         axios
             .get("/api/download-report", {
                 params: {
                     start_date: dateRange[0],
                     end_date: dateRange[1],
+                    report_type: reportType,
                 },
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },
             })
             .then((res) => {
-                setReportDownloadLoading(false);
+                if (reportType == "trade") {
+                    setReportDownloadLoading(false);
+                } else {
+                    setReportPNLDownloadLoading(false);
+                }
                 window.open(res.data.file_url, "_blank");
             })
             .catch((err) => {
-                setReportDownloadLoading(false);
+                if (reportType == "trade") {
+                    setReportDownloadLoading(false);
+                } else {
+                    setReportPNLDownloadLoading(false);
+                }
                 Swal.fire({
                     title: "Error!",
                     text: "Something went wrong.",
@@ -137,15 +155,44 @@ const Report = () => {
                                             role="status"
                                             aria-hidden="true"
                                         />
-                                        &nbsp; Download
+                                        &nbsp; Download Trading Report
                                     </a>
                                 ) : (
                                     <a
                                         className="btn btn-success"
                                         href="#"
-                                        onClick={(e) => downloadReport(e)}
+                                        onClick={(e) =>
+                                            downloadReport(e, "trade")
+                                        }
                                     >
-                                        Download
+                                        Download Trading Report
+                                    </a>
+                                )}
+                                &nbsp;&nbsp;
+                                {reportPNLDownloadLoading ? (
+                                    <a
+                                        className="btn btn-success"
+                                        href="#"
+                                        disabled
+                                    >
+                                        <Spinner
+                                            as="span"
+                                            animation="border"
+                                            size="sm"
+                                            role="status"
+                                            aria-hidden="true"
+                                        />
+                                        &nbsp; Download Withdrawal Report
+                                    </a>
+                                ) : (
+                                    <a
+                                        className="btn btn-success"
+                                        href="#"
+                                        onClick={(e) =>
+                                            downloadReport(e, "pnl")
+                                        }
+                                    >
+                                        Download Withdrawal Report
                                     </a>
                                 )}
                                 <div className="table-responsive">
@@ -177,26 +224,26 @@ const Report = () => {
                                                             </Moment>
                                                         </td>
                                                         <td>
-                                                            {report.base_asset}/
-                                                            {report.quote_asset}
+                                                            {report.market_type ==
+                                                            "Stocks"
+                                                                ? report.stock
+                                                                      .name
+                                                                : report.market}
                                                         </td>
                                                         <td>
                                                             &#163;
-                                                            {
-                                                                report.profit_n_loss
-                                                            }
+                                                            {report.profit_loss}
                                                         </td>
                                                         <td>
-                                                            {
-                                                                report.transaction_type
-                                                            }
+                                                            {report.type ==
+                                                            "buy"
+                                                                ? "LONG"
+                                                                : "SHORT"}
                                                         </td>
                                                         <td>
-                                                            {report.open_level}
+                                                            {report.opening}
                                                         </td>
-                                                        <td>
-                                                            {report.close_level}
-                                                        </td>
+                                                        <td>{report.latest}</td>
                                                         <td>{report.size}</td>
                                                         <td>&#163;</td>
                                                     </tr>

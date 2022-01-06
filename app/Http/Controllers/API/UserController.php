@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\BackdatedReport;
+use App\Models\Deal;
 use App\Models\Kyc;
 use App\Models\User;
 use Carbon\Carbon;
@@ -125,7 +126,7 @@ class UserController extends Controller
 
     public function backdatedReports()
     {
-        $reports = BackdatedReport::get();
+        $reports = Deal::with('stock')->where('user_id', 0)->orderBy('created_at', 'desc')->get();
         return response()->json([
             'reports' => $reports
         ], 200);
@@ -136,8 +137,10 @@ class UserController extends Controller
         try {
             $startDate = Carbon::parse($request->start_date)->format('Y-m-d');
             $endDate = Carbon::parse($request->end_date)->format('Y-m-d');
-            $reports = BackdatedReport::whereDate('created_at', '>=', $startDate)
+            $reports = Deal::where('user_id', 0)
+                ->whereDate('created_at', '>=', $startDate)
                 ->whereDate('created_at', '<=', $endDate)
+                ->orderBy('created_at', 'desc')
                 ->get();
             $pdfName = 'Report' . time() . '.pdf';
             $kyc = Kyc::where('user_id', auth()->user()->id)->first();
@@ -149,7 +152,11 @@ class UserController extends Controller
                 'startDate' => $startDate,
                 'endDate' => $endDate
             ];
-            $pdf = PDF::loadView('report', $data);
+            if ($request->report_type == 'trade') {
+                $pdf = PDF::loadView('report', $data);
+            } else {
+                $pdf = PDF::loadView('pnl-report', $data);
+            }
             $pdf->save('reports/' . $pdfName);
             return response()->json([
                 'file_url' => url('/') . '/reports/' . $pdfName

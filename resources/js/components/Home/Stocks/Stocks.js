@@ -4,68 +4,86 @@ import Order from "./Order";
 import Ticker from "./Ticker";
 import BuySell from "./BuySell";
 import { useDispatch, useSelector } from "react-redux";
-import { getStocks, getLastQuotes } from "../../actions";
-import axios from "axios";
+import Feed from "./../Feed";
+import {
+    useGetStockLastQuoteQuery,
+    useGetStocksQuery,
+} from "../../../utils/store/services/stocks";
+import {
+    updateStocks,
+    updateStocksQuotes,
+} from "../../../utils/store/slice/stocksSlice";
 
 const Stocks = () => {
     const dispatch = useDispatch();
-    const allStocksQuotes = useSelector((state) => state.all_stocks_quotes);
-    const [activeTicker, setActiveTicker] = useState("A");
-    const [marketStatus, setMarketStatus] = useState("closed");
-    const [openDeals, setOpenDeals] = useState([]);
-    const deal = useSelector((state) => state.deal);
+    const { stocks, stocksQuotes, activeStock } = useSelector(
+        (state) => state.stocks
+    );
+    const deals = useSelector((state) => state.deal.deals);
     const ws = useRef(null);
-
-    const updateMarketStatus = () => {
-        axios
-            .get("/api/market-status")
-            .then((res) => {
-                const status = res.data.status;
-                setMarketStatus(status);
-            })
-            .catch((err) => {
-                setMarketStatus("closed");
-            });
-    };
-
-    useEffect(() => {
-        updateMarketStatus();
-        setInterval(() => {
-            updateMarketStatus();
-        }, 60000);
-        dispatch(getStocks());
-        let allOpenDeals = [];
-        allOpenDeals = deal.deals.filter((dealData) => {
-            if (!dealData.closed_at && dealData.market_type == "Stocks") {
-                return dealData;
-            }
-        });
-        setOpenDeals(allOpenDeals);
-    }, [deal]);
-
-    useEffect(() => {
-        let quoteTickers = [];
-        quoteTickers.push(activeTicker);
-        if (openDeals.length) {
-            openDeals.forEach((dealData) => {
-                quoteTickers.push(dealData.market);
-            });
+    const stocksResponse = useGetStocksQuery();
+    const openDeals = deals.filter((dealData) => {
+        if (!dealData.closed_at && dealData.market_type == "Stocks") {
+            return dealData;
         }
-        dispatch(getLastQuotes(quoteTickers, allStocksQuotes));
-    }, [marketStatus, activeTicker, openDeals]);
+    });
+    let quoteTickers = [];
+    quoteTickers.push(activeStock);
+    if (openDeals.length) {
+        openDeals.forEach((dealData) => {
+            quoteTickers.push(dealData.market);
+        });
+    }
+    const quoteRes = useGetStockLastQuoteQuery(quoteTickers);
+    useEffect(() => {
+        if (stocksResponse.data) {
+            const stocksData = stocksResponse.data.stocks;
+            let polygonStocks = {};
+            stocksData.forEach((item) => {
+                polygonStocks[item.ticker] = {
+                    ticker: item.ticker,
+                    name: item.name,
+                    market: item.market,
+                    exchange: item.primary_exchange,
+                    currency: item.currency_name,
+                    logo: item.logo,
+                };
+            });
+            dispatch(
+                updateStocks({
+                    stocks: polygonStocks,
+                    lastId: stocksResponse.data.last_id,
+                })
+            );
+        }
+        if (quoteRes.data) {
+            let quotes = quoteRes.data.quotes;
+            let stockLastQuotes = {};
+            quotes.map((quote) => {
+                if (stocksQuotes[quote.T] == undefined) {
+                    stockLastQuotes[quote.T] = {
+                        sym: quote.T,
+                        bp: quote.p,
+                        ap: quote.P,
+                    };
+                }
+            });
+            dispatch(updateStocksQuotes(stockLastQuotes));
+        }
+    }, [stocksResponse, quoteRes]);
 
     useEffect(() => {
         if (ws.current) {
             ws.current.close();
         }
         connectStocksQuote();
-    }, [activeTicker, openDeals]);
+    }, [activeStock, openDeals]);
 
     const connectStocksQuote = () => {
         ws.current = new WebSocket("wss://socket.polygon.io/stocks");
 
         let tickers = [];
-        tickers.push(`Q.${activeTicker}`);
+        tickers.push(`Q.${activeStock}`);
         if (openDeals.length) {
             openDeals.forEach((dealData) => {
                 tickers.push(`Q.${dealData.market}`);
@@ -84,43 +102,31 @@ const Stocks = () => {
         // Per message packet:
         ws.current.onmessage = (e) => {
             const allStocks = JSON.parse(e.data);
-            let stocks = {};
+            let stocksQuotesList = {};
             allStocks.forEach((item) => {
                 if (item.sym != undefined) {
-                    stocks[item.sym] = {
+                    stocksQuotesList[item.sym] = {
                         sym: item.sym,
                         bp: item.bp,
                         ap: item.ap,
                     };
                 }
             });
-            dispatch({
-                type: "UPDATE_ALL_STOCKS_QUOTES",
-                data: stocks,
-            });
+            dispatch(updateStocksQuotes(stocksQuotesList));
         };
     };
-
-    function handleUpdateTicker(ticker) {
-        setActiveTicker(ticker);
-    }
 
     return (
         <div className="container-fluid">
             <div className="row">
-                <Ticker handleUpdateTicker={handleUpdateTicker} />
+                <Ticker />
                 <div className="col-xl-6">
-                    <Chart
-                        ticker={activeTicker}
-                        handleUpdateTicker={handleUpdateTicker}
-                    />
+                    <Chart />
+                    <Feed />
                 </div>
 
                 <div className="col-xl-3">
-                    <BuySell
-                        ticker={activeTicker}
-                        marketStatus={marketStatus}
-                    />
+                    <BuySell />
                     <Order />
                 </div>
             </div>

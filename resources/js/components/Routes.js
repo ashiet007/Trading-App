@@ -16,12 +16,11 @@ import CouponRewards from "./Profile/CouponRewards/CouponRewards";
 import Report from "./Profile/Report/Report";
 import Kyc from "./Kyc/Kyc";
 import Register from "./Register/index";
-import { useAuth } from "./context";
-import { authConstant } from "./actions/constant";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { removeUser } from "../utils/store/slice/userSlice";
 
 function Routes() {
-    const [auth, handleAuth] = useAuth(useAuth);
+    const auth = useSelector((state) => state.user.isAuthenticated);
     const dispatch = useDispatch();
 
     useEffect(async () => {
@@ -37,14 +36,11 @@ function Routes() {
                     },
                 }
             );
-            if (res.status == 200) {
-                handleAuth(true);
-            } else {
-                handleAuth(false);
+            if (res.status !== 200) {
+                dispatch(removeUser());
             }
         } catch (error) {
-            handleAuth(false);
-            dispatch({ type: authConstant.LOGOUT_SUCCESS });
+            dispatch(removeUser());
         }
     }, []);
     return (

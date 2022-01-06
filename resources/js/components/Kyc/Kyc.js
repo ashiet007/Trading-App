@@ -85,7 +85,6 @@ const Kyc = () => {
     const [passportSelfieFile, setPassportSelfieFile] = useState([]);
     const [birthDate, setBirthDate] = useState(new Date());
     const [appState, dispatch] = useReducer(reducer, initState);
-
     let history = useHistory();
     let documentTypeForm;
     if (documentType == NATIONAL_ID_CARD) {

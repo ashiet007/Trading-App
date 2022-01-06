@@ -1,8 +1,8 @@
 <header id="header" class="header">
     <div class="top-left">
         <div class="navbar-header">
-            <a class="navbar-brand" href="./"><img src="{{asset('images/logo.png')}}" width="80" alt="Logo"></a>
-            <a class="navbar-brand hidden" href="./"><img src="{{asset('images/logo2.png')}}" alt="Logo"></a>
+            <a class="navbar-brand" href="./"><img src="{{asset('images/logo_levitas_small.png')}}" width="150" alt="Logo"></a>
+            <a class="navbar-brand hidden" href="./"><img src="{{asset('images/logo_levitas_small.png')}}" alt="Logo"></a>
             <a id="menuToggle" class="menutoggle"><i class="fa fa-bars"></i></a>
         </div>
     </div>

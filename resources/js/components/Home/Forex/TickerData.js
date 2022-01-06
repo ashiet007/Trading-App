@@ -1,9 +1,15 @@
 import React from "react";
+import { updateActiveForex } from "../../../utils/store/slice/forexSlice";
+import { useDispatch } from "react-redux";
 
 const TickerData = (props) => {
+    const dispatch = useDispatch();
+    const handleUpdateTicker = (ticker) => {
+        dispatch(updateActiveForex(ticker));
+    };
     return (
         <tr
-            onClick={() => props.handleUpdateTicker(props.ticker)}
+            onClick={() => handleUpdateTicker(props.ticker)}
             style={{ cursor: "pointer" }}
         >
             <td style={{ width: "50px" }}>

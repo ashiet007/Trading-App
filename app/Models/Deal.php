@@ -17,4 +17,9 @@ class Deal extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function stock()
+    {
+        return $this->belongsTo(Stock::class, 'market', 'ticker');
+    }
 }

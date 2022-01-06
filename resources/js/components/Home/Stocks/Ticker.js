@@ -1,32 +1,90 @@
 import React, { useState } from "react";
 import TickerData from "./TickerData";
 import { useDispatch, useSelector } from "react-redux";
-import { getStocks } from "../../actions";
+import {
+    useGetStocksBySearchMutation,
+    useGetStocksByLastIdMutation,
+} from "../../../utils/store/services/stocks";
 import Loader from "react-loader-spinner";
 
 //css
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
+import {
+    updateSearchedStocks,
+    updateStocks,
+} from "../../../utils/store/slice/stocksSlice";
+import { useAlert } from "react-alert";
+import { Spinner } from "react-bootstrap";
 
 const Ticker = (props) => {
     const dispatch = useDispatch();
-    const allStocks = useSelector((state) => state.allStocks.stocks);
-    const isStocksFetching = useSelector(
-        (state) => state.allStocks.isStocksFetching
-    );
-    const lastId = useSelector((state) => state.allStocks.lastId);
+    const alert = useAlert();
+    const [loading, setLoading] = useState(false);
+    const { stocks, lastId } = useSelector((state) => state.stocks);
     const [search, setSearch] = useState("");
+    const [getStocksBySearch, { isLoading }] = useGetStocksBySearchMutation();
+    const [getStocksByLastId, result] = useGetStocksByLastIdMutation();
 
-    const handleLoadStocks = () => {
-        dispatch(getStocks(lastId));
+    const handleLoadStocks = async () => {
+        const { data, error } = await getStocksByLastId(lastId);
+        if (data) {
+            const stocksData = data.stocks;
+            let polygonStocks = {};
+            stocksData.forEach((item) => {
+                polygonStocks[item.ticker] = {
+                    ticker: item.ticker,
+                    name: item.name,
+                    market: item.market,
+                    exchange: item.primary_exchange,
+                    currency: item.currency_name,
+                    logo: item.logo,
+                };
+            });
+            dispatch(
+                updateStocks({
+                    stocks: polygonStocks,
+                    lastId: data.last_id,
+                })
+            );
+        }
+        if (error) {
+            alert.show(error.data.message, { type: "error" });
+        }
     };
 
-    const handleSearch = (e) => {
+    const handleSearch = async (e) => {
         setSearch(e.target.value);
-        dispatch(getStocks(null, e.target.value));
+        const { data, error, isLoading } = await getStocksBySearch(
+            e.target.value
+        );
+        setLoading(isLoading);
+        if (data) {
+            const stocksData = data.stocks;
+            let polygonStocks = {};
+            stocksData.forEach((item) => {
+                polygonStocks[item.ticker] = {
+                    ticker: item.ticker,
+                    name: item.name,
+                    market: item.market,
+                    exchange: item.primary_exchange,
+                    currency: item.currency_name,
+                    logo: item.logo,
+                };
+            });
+            dispatch(
+                updateSearchedStocks({
+                    stocks: polygonStocks,
+                    lastId: data.last_id,
+                })
+            );
+        }
+        if (error) {
+            alert.show(error.data.message, { type: "error" });
+        }
     };
 
-    const renderTickersListComponent = () => {
-        if (isStocksFetching) {
+    const RenderTickersListComponent = () => {
+        if (loading) {
             return (
                 <tr>
                     <td>
@@ -41,16 +99,15 @@ const Ticker = (props) => {
                 </tr>
             );
         } else {
-            if (allStocks) {
-                return Object.keys(allStocks).map((key) => {
-                    const stockData = allStocks[key];
+            if (Object.keys(stocks).length != 0) {
+                return Object.keys(stocks).map((key) => {
+                    const stockData = stocks[key];
                     return (
                         <TickerData
                             key={stockData.ticker}
                             name={stockData.name}
                             ticker={stockData.ticker}
                             logo={stockData.logo}
-                            handleUpdateTicker={props.handleUpdateTicker}
                         />
                     );
                 });
@@ -80,7 +137,7 @@ const Ticker = (props) => {
                         >
                             <table className="table align-middle table-nowrap table-borderless">
                                 <tbody>
-                                    {renderTickersListComponent()}
+                                    <RenderTickersListComponent />
                                     {lastId != null ? (
                                         <tr>
                                             <td
@@ -93,7 +150,14 @@ const Ticker = (props) => {
                                                         cursor: "pointer",
                                                     }}
                                                 >
-                                                    Load More...
+                                                    Load More...&nbsp;
+                                                    {result.isLoading ? (
+                                                        <Spinner
+                                                            animation="border"
+                                                            variant="success"
+                                                            size="sm"
+                                                        />
+                                                    ) : null}
                                                 </span>
                                             </td>
                                         </tr>

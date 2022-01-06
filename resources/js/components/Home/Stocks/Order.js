@@ -1,24 +1,27 @@
 import React, { useEffect } from "react";
 import Moment from "react-moment";
-import { closeDeal } from "../../actions";
 import { useSelector, useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 import { Spinner } from "react-bootstrap";
+import { useCloseDealMutation } from "../../../utils/store/services/deal";
+import { updateDeals } from "../../../utils/store/slice/dealSlice";
+import { useAlert } from "react-alert";
 
 const Order = (props) => {
     const dispatch = useDispatch();
-    const userAuth = useSelector((state) => state.auth);
-    const deal = useSelector((state) => state.deal);
-    const closeLoading = useSelector((state) => state.deal.close_loading);
-    const allStocks = useSelector((state) => state.allStocks.stocks);
-    const allStocksQuotes = useSelector((state) => state.all_stocks_quotes);
-    const tick = 0.01;
-    const closedDeals = deal.deals.filter((dealData) => {
+    const alert = useAlert();
+    const isAuthenticated = useSelector((state) => state.user.isAuthenticated);
+    const deals = useSelector((state) => state.deal.deals);
+    const { stocksQuotes, tickerInfo } = useSelector((state) => state.stocks);
+    const [closeDeal, { isLoading }] = useCloseDealMutation();
+    const tick = tickerInfo.tick;
+    const tickSize = tickerInfo.tickSize;
+    const closedDeals = deals.filter((dealData) => {
         if (dealData.closed_at && dealData.market_type == "Stocks") {
             return dealData;
         }
     });
-    const openDeals = deal.deals.filter((dealData) => {
+    const openDeals = deals.filter((dealData) => {
         if (!dealData.closed_at && dealData.market_type == "Stocks") {
             return dealData;
         }
@@ -26,16 +29,16 @@ const Order = (props) => {
     const updateProfitLoss = (type, opening, size, market) => {
         let profitLoss = 0.0;
         let ptsDiff = 0;
-        if (allStocksQuotes[market]) {
+        if (stocksQuotes[market]) {
             if (type == "sell") {
                 ptsDiff =
                     (parseFloat(opening) -
-                        parseFloat(allStocksQuotes[market].ap)) /
+                        parseFloat(stocksQuotes[market].ap)) /
                     tick;
                 profitLoss = parseFloat(size) * ptsDiff;
             } else {
                 ptsDiff =
-                    (parseFloat(allStocksQuotes[market].bp) -
+                    (parseFloat(stocksQuotes[market].bp) -
                         parseFloat(opening)) /
                     tick;
                 profitLoss = parseFloat(size) * ptsDiff;
@@ -57,16 +60,16 @@ const Order = (props) => {
         if (type == "sell") {
             return (
                 <td>
-                    {allStocksQuotes[market]
-                        ? parseFloat(allStocksQuotes[market].ap).toFixed(2)
+                    {stocksQuotes[market]
+                        ? parseFloat(stocksQuotes[market].ap).toFixed(2)
                         : ""}
                 </td>
             );
         } else {
             return (
                 <td>
-                    {allStocksQuotes[market]
-                        ? parseFloat(allStocksQuotes[market].bp).toFixed(2)
+                    {stocksQuotes[market]
+                        ? parseFloat(stocksQuotes[market].bp).toFixed(2)
                         : ""}
                 </td>
             );
@@ -77,32 +80,20 @@ const Order = (props) => {
         const formData = {
             latest:
                 type == "sell"
-                    ? parseFloat(allStocksQuotes[market].ap)
-                    : parseFloat(allStocksQuotes[market].bp),
+                    ? parseFloat(stocksQuotes[market].ap)
+                    : parseFloat(stocksQuotes[market].bp),
             deal_id: id,
-            tick: 0.01,
-            tick_size: 2,
+            tick: tick,
+            tick_size: tickSize,
         };
-        dispatch(closeDeal(formData));
+        const { data, error } = closeDeal(formData);
+        if (data) {
+            dispatch(updateDeals(data.deals));
+        }
+        if (error) {
+            alert.show(error.data.message, { type: "error" });
+        }
     };
-
-    useEffect(() => {
-        axios
-            .get("/api/wallet", {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            })
-            .then((res) => {
-                dispatch({
-                    type: "UPDATE_WALLET",
-                    data: res.data.amount,
-                });
-            })
-            .catch((err) => {
-                console.log(err.response.message);
-            });
-    }, [deal]);
 
     return (
         <div className="card  mt-4">
@@ -136,7 +127,7 @@ const Order = (props) => {
                 </div>
             </div>
             <div className="card-body px-0">
-                {userAuth.authenticated ? (
+                {isAuthenticated ? (
                     <div className="tab-content">
                         <div
                             className="tab-pane active"
@@ -190,7 +181,7 @@ const Order = (props) => {
                                                                 )
                                                             }
                                                         >
-                                                            {closeLoading ? (
+                                                            {isLoading ? (
                                                                 <button
                                                                     className="btn btn-success w-100 waves-effect waves-light"
                                                                     type="button"

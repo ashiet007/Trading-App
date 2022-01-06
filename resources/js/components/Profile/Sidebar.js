@@ -18,19 +18,20 @@ const Sidebar = ({ activeTab }) => {
                             </Link>
                         </li>
                         <li>
-                            <Link to={"/customer/currencyprefernce"} className={
-                                    activeTab == "currencyprefernce" ? "active" : ""
-                                }>
+                            <Link
+                                to={"/customer/currencyprefernce"}
+                                className={
+                                    activeTab == "currencyprefernce"
+                                        ? "active"
+                                        : ""
+                                }
+                            >
                                 <i className="fas fa-comments-dollar"></i>
                                 Currency Preference
                             </Link>
                         </li>
                         <li>
-                            <Link
-                                to={"/customer/kyc"}
-                                
-                                className=""
-                            >
+                            <Link to={"/customer/kyc"} className="">
                                 <i className="fas fa-comments-dollar"></i>
                                 Verify KYC
                             </Link>
@@ -39,7 +40,9 @@ const Sidebar = ({ activeTab }) => {
                             <Link
                                 to={"/customer/notificationprefernce"}
                                 className={
-                                    activeTab == "notificationprefernce" ? "active" : ""
+                                    activeTab == "notificationprefernce"
+                                        ? "active"
+                                        : ""
                                 }
                             >
                                 <i className="fas fa-bell"></i> Notification
@@ -47,9 +50,10 @@ const Sidebar = ({ activeTab }) => {
                             </Link>
                         </li>
                         <li>
-                            <Link to={"/customer/fees"} className={
-                                    activeTab == "fees" ? "active" : ""
-                                }>
+                            <Link
+                                to={"/customer/fees"}
+                                className={activeTab == "fees" ? "active" : ""}
+                            >
                                 <i className="fas fa-percent"></i> Fees
                             </Link>
                         </li>
@@ -65,33 +69,27 @@ const Sidebar = ({ activeTab }) => {
                             </Link>
                         </li>
                         <li>
-                            <Link to={"/customer/activitylogs"} className={
-                                    activeTab == "activitylogs" ? "active" : ""
-                                }>
-                                <i className="fas fa-user"></i> Activity Logs
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/customer/report"} className={
+                            <Link
+                                to={"/customer/report"}
+                                className={
                                     activeTab == "report" ? "active" : ""
-                                }>
+                                }
+                            >
                                 <i className="fas fa-file-download"></i>
                                 Download Trading Report
                             </Link>
                         </li>
                         <li>
-                            <Link to={"/customer/privacycontrol"} className={
-                                    activeTab == "privacycontrol" ? "active" : ""
-                                }>
+                            <Link
+                                to={"/customer/privacycontrol"}
+                                className={
+                                    activeTab == "privacycontrol"
+                                        ? "active"
+                                        : ""
+                                }
+                            >
                                 <i className="fas fa-user-lock"></i> Privacy
                                 Control
-                            </Link>
-                        </li>
-                        <li>
-                            <Link to={"/customer/couponreward"} className={
-                                    activeTab == "couponreward" ? "active" : ""
-                                }>
-                                <i className="fas fa-gift"></i> Coupon rewards
                             </Link>
                         </li>
                     </ul>

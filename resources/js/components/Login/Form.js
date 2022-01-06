@@ -1,25 +1,37 @@
 import React, { useState } from "react";
-import { login } from "../actions";
 import { Alert, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { useLoginMutation } from "../../utils/store/services/user";
+import { updateUser } from "../../utils/store/slice/userSlice";
+import { useAlert } from "react-alert";
 
 const Form = () => {
+    const alert = useAlert();
     const dispatch = useDispatch();
-    const userAuth = useSelector((state) => state.auth);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [userLogin, { isLoading }] = useLoginMutation();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (email == "" || password == "") {
             return false;
         }
-        const user = {
+        const formData = {
             email: email,
             password: password,
         };
-        dispatch(login(user));
+        const { data, error } = await userLogin(formData);
+        if (data) {
+            const { access_token, user } = data;
+            localStorage.setItem("token", access_token);
+            localStorage.setItem("user", JSON.stringify(user));
+            dispatch(updateUser(user));
+        }
+        if (error) {
+            alert.show(error.data.message, { type: "error" });
+        }
     };
     const noClick = (e) => {
         e.preventDefault();
@@ -28,12 +40,11 @@ const Form = () => {
         <div className="auth-content my-auto">
             <div className="text-center">
                 <h5 className="mb-0">Welcome Back !</h5>
-                <p className="text-muted mt-2">Sign in to continue to CFD.</p>
+                <p className="text-muted mt-2">
+                    Sign in to continue to Levitas-globalmarkets.
+                </p>
             </div>
             <form className="mt-4 pt-2" onSubmit={handleSubmit}>
-                {userAuth.message ? (
-                    <Alert variant="danger">{userAuth.message}</Alert>
-                ) : null}
                 <div className="mb-3">
                     <label className="form-label">Email</label>
                     <input
@@ -94,7 +105,7 @@ const Form = () => {
                     </div>
                 </div>
                 <div className="mb-3">
-                    {userAuth.loading ? (
+                    {isLoading ? (
                         <button
                             className="btn btn-primary w-100 waves-effect waves-light"
                             type="submit"
@@ -160,7 +171,7 @@ const Form = () => {
 
             <div className="mt-5 text-center">
                 <p className="text-muted mb-0">
-                    Don't have an account ?
+                    Don't have an account ?&nbsp;
                     <Link to={"/register"} className="text-primary fw-semibold">
                         Signup now
                     </Link>

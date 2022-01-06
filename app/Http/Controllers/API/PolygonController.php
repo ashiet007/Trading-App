@@ -19,18 +19,18 @@ class PolygonController extends Controller
     {
         try {
             if ($request->has('lastId')) {
-                $stocks = Stock::where('id', '>', $request->lastId)->limit(10)->get();
+                $stocks = Stock::where('id', '>', $request->lastId)->limit(25)->get();
             } else if ($request->has('search')) {
                 $stocks = Stock::where('ticker', 'LIKE', "%$request->search%")
                     ->orWhere('name', 'LIKE', "%$request->search%")
-                    ->limit(10)
+                    ->limit(25)
                     ->get();
             } else {
-                $stocks = Stock::limit(10)->get();
+                $stocks = Stock::limit(25)->get();
             }
             return response()->json([
                 "stocks" => $stocks,
-                "last_id" => count($stocks) >= 10 && $stocks->last() ? $stocks->last()->id : null
+                "last_id" => count($stocks) >= 25 && $stocks->last() ? $stocks->last()->id : null
             ], 200);
         } catch (Throwable $e) {
             return response()->json([
@@ -47,18 +47,18 @@ class PolygonController extends Controller
     {
         try {
             if ($request->has('lastId')) {
-                $forexes = Forex::where('id', '>', $request->lastId)->limit(10)->get();
+                $forexes = Forex::where('id', '>', $request->lastId)->limit(25)->get();
             } else if ($request->has('search')) {
                 $forexes = Forex::where('ticker', 'LIKE', "%$request->search%")
                     ->orWhere('name', 'LIKE', "%$request->search%")
-                    ->limit(10)
+                    ->limit(25)
                     ->get();
             } else {
-                $forexes = Forex::limit(10)->get();
+                $forexes = Forex::limit(25)->get();
             }
             return response()->json([
                 "forexes" => $forexes,
-                "last_id" => count($forexes) >= 10 && $forexes->last() ? $forexes->last()->id : null
+                "last_id" => count($forexes) >= 25 && $forexes->last() ? $forexes->last()->id : null
             ], 200);
         } catch (Throwable $e) {
             return response()->json([

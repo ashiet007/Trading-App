@@ -38,12 +38,12 @@ class DealController extends Controller
             $tickLength = $this->getDecCount($deal->tick_size);
             if ($deal->type == 'sell') {
                 $ptsDiff = ($deal->opening - $request->latest) / $deal->tick_size;
-                $profitLoss = (int)($ptsDiff * $deal->size);
+                $profitLoss = (float)($ptsDiff * $deal->size);
             } else {
                 $ptsDiff = ($request->latest - $deal->opening) / $deal->tick_size;
-                $profitLoss = (int)($ptsDiff * $deal->size);
+                $profitLoss = (float)($ptsDiff * $deal->size);
             }
-            $profitLoss = $profitLoss - (abs($profitLoss) * 0.025);
+            $profitLoss = $profitLoss - ($profitLoss * 0.025);
             WalletTransaction::create([
                 'user_id' => auth('api')->user()->id,
                 'amount' => $profitLoss,

@@ -1,18 +1,22 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "./../Layouts/Layout";
 import Crypto from "./Crypto/Crypto";
 import Stocks from "./Stocks/Stocks";
-import { allDeals } from "../actions";
 import { useDispatch } from "react-redux";
 import Forex from "./Forex/Forex";
+import { useGetAllDealsQuery } from "../../utils/store/services/deal";
+import { useGetWalletQuery } from "../../utils/store/services/user";
+import { useGetMarketStatusQuery } from "../../utils/store/services/global";
+import { updateWallet } from "../../utils/store/slice/userSlice";
+import { updateDeals } from "../../utils/store/slice/dealSlice";
+import { updateMarketStatus } from "../../utils/store/slice/commonSlice";
 
 const Home = () => {
     const dispatch = useDispatch();
     const [activeTab, setActiveTab] = useState("crypto");
-
-    useEffect(() => {
-        dispatch(allDeals());
-    }, []);
+    const walletRes = useGetWalletQuery();
+    const dealRes = useGetAllDealsQuery();
+    const marketRes = useGetMarketStatusQuery();
 
     const handleTabClick = (e) => {
         let tab = e.currentTarget
@@ -21,7 +25,7 @@ const Home = () => {
         setActiveTab(tab);
     };
 
-    const renderActiveTabContent = () => {
+    const RenderActiveTabContent = () => {
         if (activeTab == "crypto") {
             return (
                 <div
@@ -50,6 +54,18 @@ const Home = () => {
             );
         }
     };
+
+    useEffect(() => {
+        if (walletRes.data) {
+            dispatch(updateWallet(walletRes.data.amount));
+        }
+        if (dealRes.data) {
+            dispatch(updateDeals(dealRes.data.deals));
+        }
+        if (marketRes.data) {
+            dispatch(updateMarketStatus(marketRes.data.status));
+        }
+    }, [walletRes, dealRes, marketRes]);
 
     return (
         <Layout>
@@ -113,7 +129,7 @@ const Home = () => {
                 </div>
                 <div className="card-body px-0">
                     <div className="tab-content">
-                        {renderActiveTabContent()}
+                        <RenderActiveTabContent />
                     </div>
                 </div>
             </div>

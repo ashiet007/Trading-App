@@ -11,6 +11,12 @@
             <li class="{{ request()->is('admin/kycs*') ? 'active' : '' }}">
                 <a href="{{route('kycs.index')}}"><i class="menu-icon ti-user"></i>KYC's </a>
             </li>
+            <li class="{{ request()->is('admin/bulk-users-upload*') ? 'active' : '' }}">
+                <a href="{{route('userBulkUploadForm')}}"><i class="menu-icon fa fa-upload"></i>User Bulk Upload </a>
+            </li>
+            <li class="{{ request()->is('admin/deals/bulk-trade-upload*') ? 'active' : '' }}">
+                <a href="{{route('tradeBulkUploadForm')}}"><i class="menu-icon fa fa-upload"></i>User Bulk Trade Upload </a>
+            </li>
             <li class="{{ request()->is('admin/orders*') ? 'active' : '' }}">
                 <a href="{{route('orders.index')}}"><i class="menu-icon ti-user"></i>Orders </a>
             </li>

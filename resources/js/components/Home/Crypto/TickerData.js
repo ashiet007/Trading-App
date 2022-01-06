@@ -1,14 +1,46 @@
-import React from "react";
-import { useSelector } from "react-redux";
+import React, { useEffect } from "react";
+import { updateActiveTicker } from "../../../utils/store/slice/tickerSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { updateCryptocurrencies } from "../../../utils/store/slice/tickerSlice";
+import { useGetCryptocurrenciesQuery } from "../../../utils/store/services/crypto";
 
 const TickerData = (props) => {
     const coin = props.name.replace(props.market, "");
-    const cryptocurrencies = useSelector(
-        (state) => state.crypto.cryptocurrencies
-    );
+    const dispatch = useDispatch();
+    const { cryptocurrencies } = useSelector((state) => state.ticker);
+    const { data, error, isLoading } = useGetCryptocurrenciesQuery();
+
+    const handleUpdateCurrency = (ticker) => {
+        dispatch(updateActiveTicker(ticker));
+    };
+
+    const RenderPriceIcon = () => {
+        if (props.market == "USDT") {
+            return "$";
+        } else {
+            return <span>&#163;</span>;
+        }
+    };
+
+    useEffect(() => {
+        if (data) {
+            let cryptocurrenciesList = {};
+            data.cryptocurrencies.forEach((item) => {
+                cryptocurrenciesList[item.type] = {
+                    type: item.type,
+                    name: item.name,
+                    precision: item.precision,
+                    logo: item.logo,
+                    quote_precisions: item.quote_precisions,
+                };
+            });
+            dispatch(updateCryptocurrencies(cryptocurrenciesList));
+        }
+    }, []);
+
     return (
         <tr
-            onClick={() => props.handleUpdateCurrency(props.name)}
+            onClick={() => handleUpdateCurrency(props.name)}
             style={{ cursor: "pointer" }}
         >
             <td style={{ width: "50px" }}>
@@ -60,7 +92,8 @@ const TickerData = (props) => {
             <td>
                 <div className="">
                     <h5 className="font-size-14 text-muted mb-0">
-                        &#163;{parseFloat(props.currentValue)}
+                        <RenderPriceIcon />
+                        {parseFloat(props.currentValue)}
                     </h5>
                     <p className="text-muted mb-0 font-size-12">
                         {props.amount}

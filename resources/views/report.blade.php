@@ -24,7 +24,10 @@
                <table class="table page1"
                   style="width:100%;background:#fff;border-collapse: collapse;margin:10px 0;">
                   <tr>
-                     <th style="border-bottom:2px solid #470ad2;padding-bottom: 10px;padding-top: 10px"><a href="#"><img class="logo" src="https://newtonfoxbds.com/wp-content/uploads/2019/04/Dummy-logo-orange-1.png" width="200"></a></th>
+                     <th style="border-bottom:2px solid #470ad2;padding-bottom: 10px;padding-top: 10px"><a href="#"><img class="logo" src="http://trade.levitas-globalmarkets.com/images/logo_levitas_small.png" width="200"></a>
+                        <address>Suite 305, Griffith Corporate Centre, Kingstown, St. Vincent and the Grenadines.</address>
+                        <a href="mailto:info@levitasglobal.com" target="_blank" style="color:#0080c1;text-decoration: none;">info@levitasglobal.com</a>
+                    </th>
                   </tr>
                   <tr>
                      <td  colspan='2' style="width:100%;vertical-align: top;padding:0;background-color:#fff!important;">
@@ -48,7 +51,7 @@
                                              </tr>
                                              <tr>
                                                 <td style="padding:8px;border-bottom:2px solid #fff;font-size:15px;color:#000;line-height: 1.5;"><strong>Date of Birth:</strong></td>
-                                                <td style="padding:8px;border-bottom:2px solid #fff;font-size:15px;color:#000;line-height: 1.5;">{{isset($kyc)?\Carbon\Carbon::parse($kyc->birth_date)->format('d-m-Y'):"N/A"}}</td>
+                                                <td style="padding:8px;border-bottom:2px solid #fff;font-size:15px;color:#000;line-height: 1.5;">{{isset($kyc)?\Carbon\Carbon::parse($kyc->birth_date)->format('d-m-Y'):"10-05-1993"}}</td>
                                              </tr>
                                              <tr>
                                                 <td style="padding:8px;border-bottom:2px solid #fff;font-size:15px;color:#000;line-height: 1.5;"><strong>Email:</strong></td>
@@ -56,7 +59,7 @@
                                              </tr>
                                              <tr>
                                                 <td style="padding:8px;font-size:15px;color:#000;line-height: 1.5;"><strong>Address:</strong></td>
-                                                <td style="padding:8px;font-size:15px;color:#000;line-height: 1.5;">{{isset($kyc)?$kyc->address.", ".$kyc->city.", ".$kyc->state.", ".$kyc->country_name.", ".$kyc->zip_code:"N/A"}}</td>
+                                                <td style="padding:8px;font-size:15px;color:#000;line-height: 1.5;">{{isset($kyc)?$kyc->address.", ".$kyc->city.", ".$kyc->state.", ".$kyc->country_name.", ".$kyc->zip_code:"330 SW 2nd St, Fort Lauderdale, FL 33312"}}</td>
                                              </tr>
                                           </table>
                                        </td>
@@ -91,27 +94,32 @@
                                                 <th style="background-color:#ddd;padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;"><strong>Currency</strong></th>
                                              </tr>
                                              @foreach ($reports as $report)
-                                                 <tr>
-                                                <td style="background-color:#ddd;padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;"><strong>{{\Carbon\Carbon::parse($report->created_at)->format('d/m/Y')}} </strong></td>
-                                                <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">{{$report->base_asset}}/{{$report->quote_asset}} </td>
-                                                <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">£{{$report->profit_n_loss}}  </td>
-                                                <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">{{$report->transaction_type}}  </td>
-                                                <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">{{$report->open_level}} </td>
-                                                <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">{{$report->close_level}} </td>
-                                                <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">{{$report->size}} </td>
-                                                <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">£</td>
-                                             </tr>
-                                                @if ($report->transaction_type == 'LONG')
+                                                @if ($report->market_type == \App\Models\Deal::STOCKS)
                                                     @php
-                                                        $buyTotal =  $report->open_level;
-                                                        $sellTotal = $report->close_level;
-                                                        $totalPnL = $totalPnL + $report->profit_n_loss;
+                                                        $ticker = \App\Models\Stock::where('ticker',$report->market)->first();
+                                                    @endphp
+                                                @endif
+                                                <tr>
+                                                    <td style="background-color:#ddd;padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;"><strong>{{\Carbon\Carbon::parse($report->created_at)->format('d/m/Y')}} </strong></td>
+                                                    <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">{{$report->market_type == \App\Models\Deal::STOCKS ? $ticker->name:$report->market}} </td>
+                                                    <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">£{{$report->profit_loss}}  </td>
+                                                    <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">{{$report->type == 'buy'?"LONG":"SHORT"}}  </td>
+                                                    <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">{{$report->opening}} </td>
+                                                    <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">{{$report->latest}} </td>
+                                                    <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">{{$report->size}} </td>
+                                                    <td style="padding:8px;border:1px solid #666;font-size:14px;color:#000;line-height: 1.5;">£</td>
+                                                </tr>
+                                                @if ($report->type == 'buy')
+                                                    @php
+                                                        $buyTotal =  $report->opening;
+                                                        $sellTotal = $report->latest;
+                                                        $totalPnL = $totalPnL + $report->profit_loss;
                                                     @endphp
                                                 @else
                                                     @php
-                                                        $buyTotal =  $report->close_level;
-                                                        $sellTotal = $report->open_level;
-                                                        $totalPnL = $totalPnL + $report->profit_n_loss;
+                                                        $buyTotal =  $report->latest;
+                                                        $sellTotal = $report->opening;
+                                                        $totalPnL = $totalPnL + $report->profit_loss;
                                                     @endphp
                                                 @endif
                                              @endforeach

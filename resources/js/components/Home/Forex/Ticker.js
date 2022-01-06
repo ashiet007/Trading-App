@@ -1,32 +1,94 @@
 import React, { useState } from "react";
 import TickerData from "./TickerData";
 import { useDispatch, useSelector } from "react-redux";
-import { getForexes } from "../../actions";
 import Loader from "react-loader-spinner";
 
 //css
 import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
+import { useAlert } from "react-alert";
+import {
+    useGetForexesByLastIdMutation,
+    useGetForexesBySearchMutation,
+} from "../../../utils/store/services/forex";
+import {
+    updateForexes,
+    updateSearchedForex,
+} from "../../../utils/store/slice/forexSlice";
+import { Spinner } from "react-bootstrap";
 
-const Ticker = (props) => {
+const Ticker = () => {
     const dispatch = useDispatch();
-    const allForex = useSelector((state) => state.allForexes.forexes);
-    const isForexFetching = useSelector(
-        (state) => state.allForexes.isForexFetching
-    );
-    const lastId = useSelector((state) => state.allForexes.lastId);
+    const alert = useAlert();
+    const [loading, setLoading] = useState(false);
+    const { forexes, lastId } = useSelector((state) => state.forex);
     const [search, setSearch] = useState("");
+    const [getForexBySearch, { isLoading }] = useGetForexesBySearchMutation();
+    const [getForexByLastId, result] = useGetForexesByLastIdMutation();
 
-    const handleLoadForex = () => {
-        dispatch(getForexes(nextUrl));
+    const handleLoadForex = async () => {
+        const { data, error } = await getForexByLastId(lastId);
+        if (data) {
+            const forexesData = data.forexes;
+            let polygonForex = {};
+            forexesData.forEach((item) => {
+                const symbol = `${item.base_currency_symbol}/${item.currency_symbol}`;
+                polygonForex[symbol] = {
+                    ticker: item.ticker,
+                    name: item.name,
+                    market: item.market,
+                    currency: item.currency_name,
+                    currency_symbol: item.currency_symbol,
+                    base_currency_symbol: item.base_currency_symbol,
+                    logo: item.logo,
+                };
+            });
+            dispatch(
+                updateForexes({
+                    forexes: polygonForex,
+                    lastId: data.last_id,
+                })
+            );
+        }
+        if (error) {
+            alert.show(error.data.message, { type: "error" });
+        }
     };
 
-    const handleSearch = (e) => {
+    const handleSearch = async (e) => {
         setSearch(e.target.value);
-        dispatch(getForexes(null, e.target.value));
+        const { data, error, isLoading } = await getForexBySearch(
+            e.target.value
+        );
+        setLoading(isLoading);
+        if (data) {
+            const forexesData = data.forexes;
+            let polygonForex = {};
+            forexesData.forEach((item) => {
+                const symbol = `${item.base_currency_symbol}/${item.currency_symbol}`;
+                polygonForex[symbol] = {
+                    ticker: item.ticker,
+                    name: item.name,
+                    market: item.market,
+                    currency: item.currency_name,
+                    currency_symbol: item.currency_symbol,
+                    base_currency_symbol: item.base_currency_symbol,
+                    logo: item.logo,
+                };
+            });
+            dispatch(
+                updateSearchedForex({
+                    stocks: polygonForex,
+                    lastId: data.last_id,
+                })
+            );
+        }
+        if (error) {
+            alert.show(error.data.message, { type: "error" });
+        }
     };
 
-    const renderTickersListComponent = () => {
-        if (isForexFetching) {
+    const RenderTickersListComponent = () => {
+        if (loading) {
             return (
                 <tr>
                     <td>
@@ -41,16 +103,15 @@ const Ticker = (props) => {
                 </tr>
             );
         } else {
-            if (allForex) {
-                return Object.keys(allForex).map((key) => {
-                    const forexData = allForex[key];
+            if (Object.keys(forexes).length != 0) {
+                return Object.keys(forexes).map((key) => {
+                    const forexData = forexes[key];
                     return (
                         <TickerData
                             key={key}
                             name={forexData.name}
                             ticker={key}
                             logo={forexData.logo}
-                            handleUpdateTicker={props.handleUpdateTicker}
                         />
                     );
                 });
@@ -80,7 +141,7 @@ const Ticker = (props) => {
                         >
                             <table className="table align-middle table-nowrap table-borderless">
                                 <tbody>
-                                    {renderTickersListComponent()}
+                                    <RenderTickersListComponent />
                                     {lastId != null ? (
                                         <tr>
                                             <td
@@ -93,7 +154,14 @@ const Ticker = (props) => {
                                                         cursor: "pointer",
                                                     }}
                                                 >
-                                                    Load More...
+                                                    Load More...&nbsp;
+                                                    {result.isLoading ? (
+                                                        <Spinner
+                                                            animation="border"
+                                                            variant="success"
+                                                            size="sm"
+                                                        />
+                                                    ) : null}
                                                 </span>
                                             </td>
                                         </tr>

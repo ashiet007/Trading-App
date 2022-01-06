@@ -1,61 +1,45 @@
-import axios from "axios";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Alert, Spinner } from "react-bootstrap";
-import { openDeal } from "../../actions";
 import { useDispatch, useSelector } from "react-redux";
+import { useOpenDealMutation } from "../../../utils/store/services/deal";
+import { updateDeals } from "../../../utils/store/slice/dealSlice";
+import { useAlert } from "react-alert";
 
-const BuySell = ({ ticker, marketStatus, lastQuote }) => {
-    const allStocks = useSelector((state) => state.allStocks.stocks);
-    const allStocksQuotes = useSelector((state) => state.all_stocks_quotes);
-    const tickSize = 2;
-    const tick = 0.01;
-    let sellPrice = 0.0;
-    let buyPrice = 0.0;
-    if (allStocksQuotes[ticker]) {
-        sellPrice = Number(allStocksQuotes[ticker].bp).toFixed(tickSize);
-        buyPrice = Number(allStocksQuotes[ticker].ap).toFixed(tickSize);
-    }
+const BuySell = () => {
     const dispatch = useDispatch();
-    const formLoading = useSelector((state) => state.deal.form_loading);
-    const deals = useSelector((state) => state.deal.deals);
-    const userAuth = useSelector((state) => state.auth);
-    const walletAmount = useSelector((state) => state.wallet_amount);
+    const alert = useAlert();
     const [betType, setBetType] = useState("");
     const [size, setSize] = useState("");
     const [stop, setStop] = useState("");
     const [limit, setLimit] = useState("");
-    const [validationErrors, setValidationErrors] = useState([]);
-    const [errorMessage, setErrorMessage] = useState(null);
-    useEffect(() => {
-        axios
-            .get("/api/wallet", {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                },
-            })
-            .then((res) => {
-                dispatch({
-                    type: "UPDATE_WALLET",
-                    data: res.data.amount,
-                });
-            })
-            .catch((err) => {
-                console.log(err.response);
-            });
-    }, [deals]);
+    const { activeStock, stocksQuotes, tickerInfo } = useSelector(
+        (state) => state.stocks
+    );
+    const marketStatus = useSelector((state) => state.common.marketStatus);
+    const [openDeal, { isLoading }] = useOpenDealMutation();
+    const tickSize = tickerInfo.tickSize;
+    const tick = tickerInfo.tick;
+    let sellPrice = 0.0;
+    let buyPrice = 0.0;
+    if (stocksQuotes[activeStock]) {
+        sellPrice = Number(stocksQuotes[activeStock].bp).toFixed(tickSize);
+        buyPrice = Number(stocksQuotes[activeStock].ap).toFixed(tickSize);
+    }
+    const isAuthenticated = useSelector((state) => state.user.isAuthenticated);
+    const walletAmount = useSelector((state) => state.user.wallet);
 
     const handleBetClick = (e) => {
         e.preventDefault();
         setBetType(e.currentTarget.getAttribute("data-tab"));
     };
 
-    const renderStopHtml = () => {
+    const RenderStopHtml = () => {
         if (stop && size && betType) {
             let stopPoint = 0;
             if (betType == "buy") {
-                stopPoint = Number(sellPrice) - parseFloat(stop) * tick;
+                stopPoint = Number(buyPrice) - parseFloat(stop) * tick;
             } else {
-                stopPoint = Number(buyPrice) + parseFloat(stop) * tick;
+                stopPoint = Number(sellPrice) + parseFloat(stop) * tick;
             }
             const loss = stop * size;
             return (
@@ -69,13 +53,13 @@ const BuySell = ({ ticker, marketStatus, lastQuote }) => {
         }
     };
 
-    const renderLimitHtml = () => {
+    const RenderLimitHtml = () => {
         if (limit && size && betType) {
             let limitPoint = 0;
             if (betType == "buy") {
-                limitPoint = Number(sellPrice) + parseFloat(limit) * tick;
+                limitPoint = Number(buyPrice) + parseFloat(limit) * tick;
             } else {
-                limitPoint = Number(buyPrice) - parseFloat(limit) * tick;
+                limitPoint = Number(sellPrice) - parseFloat(limit) * tick;
             }
             const profit = limit * size;
             return (
@@ -88,12 +72,6 @@ const BuySell = ({ ticker, marketStatus, lastQuote }) => {
             return null;
         }
     };
-
-    useEffect(() => {
-        renderStopHtml();
-        renderLimitHtml();
-    }, [betType, size, stop, limit]);
-
     const clearInput = () => {
         setBetType("");
         setSize("");
@@ -101,28 +79,27 @@ const BuySell = ({ ticker, marketStatus, lastQuote }) => {
         setLimit("");
     };
 
-    const handleOrderSubmit = (e) => {
+    const handleOrderSubmit = async (e) => {
         e.preventDefault();
-        let customErrors = [];
-        if (!userAuth.authenticated) {
-            customErrors.push("Please Login to place deal.");
-            setValidationErrors(customErrors);
+        if (!isAuthenticated) {
+            alert.show("Please Login to place deal.", { type: "error" });
             return false;
         }
         if (betType == "") {
-            customErrors.push("Please select Bet Type");
+            alert.show("Please select Bet Type", { type: "error" });
+            return false;
         }
         if (size == "") {
-            customErrors.push("Please enter size.");
+            alert.show("Please enter size.", { type: "error" });
+            return false;
         } else {
             const balance = parseFloat(size) * 0.01;
             if (balance > walletAmount) {
-                customErrors.push("You don't have enough balance in wallet.");
+                alert.show("You don't have enough balance in wallet.", {
+                    type: "error",
+                });
+                return false;
             }
-        }
-        setValidationErrors(customErrors);
-        if (customErrors.length) {
-            return false;
         }
         let opening = 0;
         if (betType == "sell") {
@@ -131,7 +108,7 @@ const BuySell = ({ ticker, marketStatus, lastQuote }) => {
             opening = buyPrice;
         }
         let formData = {
-            market: ticker,
+            market: activeStock,
             type: betType,
             size: size,
             opening: opening,
@@ -141,7 +118,13 @@ const BuySell = ({ ticker, marketStatus, lastQuote }) => {
             currency: "USD",
             market_type: "Stocks",
         };
-        dispatch(openDeal(formData));
+        const { data, error } = await openDeal(formData);
+        if (data) {
+            dispatch(updateDeals(data.deals));
+        }
+        if (error) {
+            alert.show(error.data.message, { type: "error" });
+        }
         clearInput();
     };
 
@@ -167,18 +150,6 @@ const BuySell = ({ ticker, marketStatus, lastQuote }) => {
                 </div>
             </div>
             <div className="card-body">
-                {validationErrors.length ? (
-                    <Alert variant="danger">
-                        <ul>
-                            {validationErrors.map((error, key) => {
-                                return <li key={key}>{error}</li>;
-                            })}
-                        </ul>
-                    </Alert>
-                ) : null}
-                {errorMessage ? (
-                    <Alert variant="danger">{errorMessage}</Alert>
-                ) : null}
                 {marketStatus == "closed" ? (
                     <Alert variant="danger">Market is closed now.</Alert>
                 ) : null}
@@ -262,7 +233,7 @@ const BuySell = ({ ticker, marketStatus, lastQuote }) => {
                                             setStop(e.target.value)
                                         }
                                     />
-                                    {renderStopHtml()}
+                                    <RenderStopHtml />
                                 </div>
                                 <div className="form-group mb-3">
                                     <label>Limit</label>
@@ -275,10 +246,10 @@ const BuySell = ({ ticker, marketStatus, lastQuote }) => {
                                             setLimit(e.target.value)
                                         }
                                     />
-                                    {renderLimitHtml()}
+                                    <RenderLimitHtml />
                                 </div>
                                 <div className="text-center">
-                                    {formLoading ? (
+                                    {isLoading ? (
                                         <button
                                             className="btn btn-primary w-100 waves-effect waves-light"
                                             type="submit"
